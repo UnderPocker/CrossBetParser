@@ -13,6 +13,9 @@ public class Match implements Cloneable{
     private Game game;
     private boolean wasNotified;
     private int score1, score2;
+    private int mapScore1, mapScore2;
+    private int mapNum;
+    private String map;
 
 
     @Override

@@ -10,17 +10,12 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Locale;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class CrossBetParser {
     public static Set<Match> parseHtml(String html) throws IOException, ParseException {
-        Set<Match> matches = new HashSet<>();
-
         String regex = ".+var live = (.+);.+";
         Pattern pattern = Pattern.compile(regex, Pattern.DOTALL);
         Matcher matcher = pattern.matcher(html);
@@ -28,19 +23,49 @@ public class CrossBetParser {
         if (matcher.find()) {
             String jsonString = matcher.group(1);
 
-            ObjectMapper mapper = new ObjectMapper();
-            mapper.configure(DeserializationFeature.ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT, true);
+            return parseMatchEntities(jsonString);
+        }
 
-            MatchEntity[] matchEntities = mapper.readValue(new StringReader(jsonString), MatchEntity[].class);
+        return Collections.emptySet();
+    }
 
-            for (MatchEntity matchEntity : matchEntities) {
-                Match match = getMatch(matchEntity);
+    public static Set<Match> parseMatchEntities(String json) throws IOException, ParseException {
+        Set<Match> matches = new HashSet<>();
 
-                matches.add(match);
-            }
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(DeserializationFeature.ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT, true);
+
+        MatchEntity[] matchEntities = mapper.readValue(new StringReader(json), MatchEntity[].class);
+
+        for (MatchEntity matchEntity : matchEntities) {
+            Match match = getMatch(matchEntity);
+
+            matches.add(match);
         }
 
         return matches;
+    }
+
+    public static void parseMatchDetails(String matchHtml, Match match) throws IOException {
+        String regex = ".+var match = (.+);.+";
+        Pattern pattern = Pattern.compile(regex, Pattern.DOTALL);
+        Matcher matcher = pattern.matcher(matchHtml);
+
+        if (matcher.find()) {
+            String jsonString = matcher.group(1);
+
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.configure(DeserializationFeature.ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT, true);
+
+            MatchEntity matchEntity = mapper.readValue(new StringReader(jsonString), MatchEntity.class);
+
+            match.setScore1(matchEntity.getRoundScoreHome());
+            match.setScore2(matchEntity.getRoundScoreAway());
+            match.setMapScore1(matchEntity.getMapScoreHome());
+            match.setMapScore2(matchEntity.getMapScoreAway());
+            match.setMap(matchEntity.getMap());
+            match.setMapNum(matchEntity.getMapNum());
+        }
     }
 
     private static Match getMatch(MatchEntity matchEntity) throws ParseException {

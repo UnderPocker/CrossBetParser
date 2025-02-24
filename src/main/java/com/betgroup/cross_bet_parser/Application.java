@@ -5,8 +5,11 @@ import com.betgroup.cross_bet_parser.dao.MatchLocalDaoImpl;
 import com.betgroup.cross_bet_parser.match.Match;
 
 import java.io.IOException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.ParseException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 public class Application {
@@ -26,7 +29,26 @@ public class Application {
         Set<Match> matches = CrossBetParser.parseHtml(html);
 
         for (Match match : matches) {
+            String matchHtml = CrossBetRequestHandler.getMatchHtmlString(match.getId());
+            CrossBetParser.parseMatchDetails(matchHtml, match);
             matchLocalDao.save(match);
+        }
+
+        Map<String, String> headers = new HashMap<>();
+        headers.put("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36");
+
+        CrossBetWebsocketHandler websocketHandler =
+                new CrossBetWebsocketHandler(new URI("wss://cross.bet/socket.io/?EIO=3&transport=websocket"), headers, matchLocalDao);
+        websocketHandler.connectBlocking();
+
+        while (!websocketHandler.isClosed()) {
+            websocketHandler.send("2");
+            Thread.sleep(25000);
+
+            if (websocketHandler.isClosed()){
+                websocketHandler = new CrossBetWebsocketHandler(new URI("wss://cross.bet/socket.io/?EIO=3&transport=websocket"), headers, matchLocalDao);
+                websocketHandler.connectBlocking();
+            }
         }
     }
 

@@ -20,4 +20,16 @@ public class CrossBetRequestHandler {
         return response.body();
     }
 
+    public static String getMatchHtmlString(String id) throws IOException, InterruptedException {
+        HttpClient client = HttpClient.newHttpClient();
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("https://cross.bet/match/" + id))
+                .GET()
+                .build();
+
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        return response.body();
+    }
+
 }

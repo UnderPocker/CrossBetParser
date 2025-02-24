@@ -36,4 +36,9 @@ public class MatchLocalDaoImpl implements MatchLocalDao{
     public boolean isDBEmpty() {
         return matches.isEmpty();
     }
+
+    @Override
+    public void clearMatches() {
+        matches.clear();
+    }
 }

@@ -13,4 +13,5 @@ public interface MatchLocalDao {
     boolean contains(String id);
     Map<String, Match> getAllMatches();
     boolean isDBEmpty();
+    void clearMatches();
 }
