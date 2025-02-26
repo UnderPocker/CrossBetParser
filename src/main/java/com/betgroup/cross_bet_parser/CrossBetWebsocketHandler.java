@@ -1,6 +1,7 @@
 package com.betgroup.cross_bet_parser;
 
 import com.betgroup.cross_bet_parser.dao.MatchLocalDao;
+import com.betgroup.cross_bet_parser.match.Bet;
 import com.betgroup.cross_bet_parser.match.Match;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
@@ -40,7 +41,7 @@ public class CrossBetWebsocketHandler extends WebSocketClient {
             return;
         }
 
-        String json = s.replaceAll("42", "");
+        String json = s.replaceFirst("42", "");
         JSONArray jsonArray = (JSONArray) JSONValue.parse(json);
 
         String opType = jsonArray.get(0).toString();
@@ -80,30 +81,59 @@ public class CrossBetWebsocketHandler extends WebSocketClient {
             case "matchClose":
                 matchLocalDao.delete(matchId);
                 break;
-            case "matchesList":
-                String live = details.get("live").toString();
-                try {
-                    Set<Match> matchSet = CrossBetParser.parseMatchEntities(live);
-
-                    for (Match liveMatch : matchSet) {
-                        if (!matchLocalDao.contains(liveMatch.getId())) {
-                            String matchHtml = CrossBetRequestHandler.getMatchHtmlString(liveMatch.getId());
-                            CrossBetParser.parseMatchDetails(matchHtml, liveMatch);
-                            send("42[\"room\",\"" + liveMatch.getId() + "\"]");
-                            matchLocalDao.save(liveMatch);
-                        }
-                    }
-
-                } catch (IOException | ParseException | InterruptedException e) {
-                    ExceptionHandler.log(e);
+            case "oddsUpdate":
+                String bookmaker = details.get("name").toString(), side = details.get("side").toString(), html = details.get("html").toString();
+                Double odd;
+                if (html.equals("-")){
+                    odd = null;
+                }else {
+                    odd = Double.parseDouble(html);
                 }
 
+                if (!match.getBets().containsKey(bookmaker)){
+                    match.getBets().put(bookmaker, new Bet());
+                }
+
+                if (side.equals("home")) {
+                    match.getBets().get(bookmaker).setHome(odd);
+                }else{
+                    match.getBets().get(bookmaker).setAway(odd);
+                }
+                break;
+            case "clearModule":
+                if (matchLocalDao.contains(matchId)) {
+                    String name = details.get("name").toString();
+                    match.getBets().put(name, new Bet());
+                }
+                break;
+            case "matchesList":
+                processMatchesList(details);
+                break;
+        }
+    }
+
+    private void processMatchesList(JSONObject details){
+        String live = details.get("live").toString();
+        try {
+            Set<Match> matchSet = CrossBetParser.parseMatchEntities(live);
+
+            for (Match liveMatch : matchSet) {
+                if (!matchLocalDao.contains(liveMatch.getId())) {
+                    String matchHtml = CrossBetRequestHandler.getMatchHtmlString(liveMatch.getId());
+                    CrossBetParser.parseMatchDetails(matchHtml, liveMatch);
+                    send("42[\"room\",\"" + liveMatch.getId() + "\"]");
+                    matchLocalDao.save(liveMatch);
+                }
+            }
+
+        } catch (IOException | ParseException | InterruptedException e) {
+            ExceptionHandler.log(e);
         }
     }
 
     @Override
     public void onClose(int i, String s, boolean b) {
-
+        System.out.println("Reconnect");
     }
 
     @Override

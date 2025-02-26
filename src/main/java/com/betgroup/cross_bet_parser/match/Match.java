@@ -2,7 +2,6 @@ package com.betgroup.cross_bet_parser.match;
 
 import lombok.Data;
 
-import java.text.SimpleDateFormat;
 import java.util.*;
 
 @Data
@@ -16,13 +15,7 @@ public class Match implements Cloneable{
     private int mapScore1, mapScore2;
     private int mapNum;
     private String map;
-
-
-    @Override
-    public String toString() {
-        SimpleDateFormat toStr = new SimpleDateFormat("HH:mm d MMM");
-        return String.format("%s %s \"%s vs %s\"", toStr.format(time), game, team1, team2);
-    }
+    private Map<String, Bet> bets = new HashMap<>();
 
     @Override
     protected Match clone() throws CloneNotSupportedException {

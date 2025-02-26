@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
+import java.util.Map;
+
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class MatchEntity {
@@ -24,4 +26,6 @@ public class MatchEntity {
     private int roundScoreAway;
     private String map;
     private int mapNum;
+
+    private Map<String, BetEntity> cross;
 }
