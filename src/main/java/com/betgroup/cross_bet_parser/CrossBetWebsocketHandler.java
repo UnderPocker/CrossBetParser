@@ -45,6 +45,9 @@ public class CrossBetWebsocketHandler extends WebSocketClient {
         JSONArray jsonArray = (JSONArray) JSONValue.parse(json);
 
         String opType = jsonArray.get(0).toString();
+        if (opType.equals("emojiReceive"))
+            return;
+
         JSONObject details = (JSONObject) jsonArray.get(1);
         String matchId = null;
         Match match = null;
